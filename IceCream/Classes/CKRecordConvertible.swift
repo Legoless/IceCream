@@ -55,35 +55,29 @@ extension CKRecordConvertible where Self: Object {
         
         for prop in properties {
             
-            if ignoredProperties.contains(prop.name) {
+            // If property is ignored or not an object, just continue
+            guard !ignoredProperties.contains(prop.name), prop.type == .object else {
                 continue
             }
             
             let item = self[prop.name]
-            
-            if prop.isArray {
-                switch prop.type {
-                case .object:
-                    guard let list = item as? List<Object>, !list.isEmpty else { break }
-                    let array = Array(list)
-                default:
-                    break
-                    /// Other inner types of List is not supported yet
-                }
+
+            // If property is an asset, continue
+            guard let objectName = prop.objectClassName, objectName != CreamAsset.className() else {
                 continue
             }
             
-            switch prop.type {
-            case .object:
-                guard let objectName = prop.objectClassName else { break }
-                // If object is CreamAsset, set record with its wrapped CKAsset value
-                if let owner = item as? CKRecordConvertible {
+            if prop.isArray, let list = item as? List<Object>, !list.isEmpty {
+                let array = Array(list)
+                guard let objectList = array as? [CKRecordConvertible & Object] else { continue }
+                
+                for object in objectList {
+                    references.append(contentsOf: object.referenceRecords)
                 }
-                // To-many relationship is not supported yet.
-            default:
-                break
             }
-            
+            else if let owner = item as? CKRecordConvertible {
+                references.append(owner.record)
+            }
         }
         return references
     }
