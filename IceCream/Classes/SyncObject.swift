@@ -15,7 +15,7 @@ import CloudKit
 /// 2. it detects the changeSets of Realm Database and directly talks to it.
 /// 3. it hands over to SyncEngine so that it can talk to CloudKit.
 
-public final class SyncObject<T> where T: Object & CKRecordConvertible & CKRecordRecoverable {
+public final class SyncObject<T> where T: Object & CKRecordConvertible {
     
     /// Notifications are delivered as long as a reference is held to the returned notification token. We should keep a strong reference to this token on the class registering for updates, as notifications are automatically unregistered when the notification token is deallocated.
     /// For more, reference is here: https://realm.io/docs/swift/latest/#notifications
