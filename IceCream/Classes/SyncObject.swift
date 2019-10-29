@@ -75,7 +75,7 @@ extension SyncObject: Syncable {
         BackgroundWorker.shared.start {
             let realm = try! Realm(configuration: self.realmConfiguration)
             guard let object = T.parseFromRecord(record: record, realm: realm) else {
-                print("There is something wrong with the converson from cloud record to local object")
+                log_error("There is something wrong with the converson from cloud record to local object")
                 return
             }
             

@@ -55,7 +55,7 @@ public class CreamAsset: Object {
         do {
             try data.write(to: url)
         } catch {
-            print("Error writing avatar to temporary directory: \(error)")
+            log_error("Error writing avatar to temporary directory: %@", error.localizedDescription)
         }
     }
 

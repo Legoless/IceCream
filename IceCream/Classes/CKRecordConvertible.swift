@@ -305,7 +305,7 @@ extension CKRecordConvertible where Self: Object {
                     // Because we use the primaryKey as recordName when object converting to CKRecord
                 }
             default:
-                print("Other types will be supported in the future.")
+                log_error("Other types will be supported in the future.")
             }
             if recordValue != nil || (recordValue == nil && prop.isOptional) {
                 o.setValue(recordValue, forKey: prop.name)

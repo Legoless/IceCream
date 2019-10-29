@@ -60,7 +60,7 @@ extension DatabaseManager {
                     guard let self = self, error == nil else { return }
                     if let modifyOp = ope as? CKModifyRecordsOperation {
                         modifyOp.modifyRecordsCompletionBlock = { (_,_,_) in
-                            print("Resume modify records success!")
+                            log_info("Resume modify records success!")
                         }
                         self.container.add(modifyOp)
                     }
