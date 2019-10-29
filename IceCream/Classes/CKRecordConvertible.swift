@@ -79,6 +79,11 @@ extension CKRecordConvertible where Self: Object {
                 references.append(owner.record)
             }
         }
+        
+        if references.count > 0 {
+            log_info("[%@] Child References: %d", Self.className(), references.count)
+        }
+        
         return references
     }
     
