@@ -14,6 +14,8 @@ public protocol CKRecordConvertible {
     static var zoneID: CKRecordZone.ID { get }
     static var databaseScope: CKDatabase.Scope { get }
     
+    static func ignoredCloudProperties () -> [String]
+    
     var recordID: CKRecord.ID { get }
     var record: CKRecord { get }
 
@@ -28,6 +30,10 @@ extension CKRecordConvertible where Self: Object {
     
     public static var recordType: String {
         return className()
+    }
+    
+    public static func ignoredCloudProperties() -> [String] {
+        return []
     }
     
     public static var zoneID: CKRecordZone.ID {
@@ -75,7 +81,13 @@ extension CKRecordConvertible where Self: Object {
     public var record: CKRecord {
         let r = CKRecord(recordType: Self.recordType, recordID: recordID)
         let properties = objectSchema.properties
+        let ignoredProperties = Self.ignoredCloudProperties()
+        
         for prop in properties {
+            
+            if ignoredProperties.contains(prop.name) {
+                continue
+            }
             
             let item = self[prop.name]
             
