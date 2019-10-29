@@ -160,7 +160,7 @@ extension CKRecordConvertible where Self: Object {
                     guard let objectName = prop.objectClassName else { break }
                     
                     if objectName == CreamAsset.className(), let creamAssets = item as? List<CreamAsset>, !creamAssets.isEmpty {
-                        r[prop.name] = creamAssets.map { $0.asset } as CKRecordValue
+                        fatalError("Lists of assets unsupported, create a separate object.")
                     }
                     else if let list = item as? List<Object>, !list.isEmpty {
                         let array = Array(list)
@@ -249,6 +249,26 @@ extension CKRecordConvertible where Self: Object {
                     guard let value = record.value(forKey: prop.name) as? [Date] else { break }
                     let list = List<Date>()
                     list.append(objectsIn: value)
+                    recordValue = list
+                case .object:
+                    guard let references = record.value(forKey: prop.name) as? [CKRecord.Reference] else {
+                        break
+                    }
+                    
+                    let list = List<DynamicObject>()
+                    
+                    for owner in references {
+                        guard let ownerType = prop.objectClassName else { break }
+                        let schema = realm.schema.objectSchema.first(where: { $0.className == ownerType })
+                        
+                        primaryKeyForRecordID(recordID: owner.recordID, schema: schema).flatMap {
+                            guard let dynamicObject = realm.dynamicObject(ofType: ownerType, forPrimaryKey: $0) else {
+                                return
+                            }
+                            list.append(dynamicObject)
+                        }
+                    }
+                    
                     recordValue = list
                 default:
                     break
