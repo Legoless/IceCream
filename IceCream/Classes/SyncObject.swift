@@ -9,6 +9,12 @@ import Foundation
 import RealmSwift
 import CloudKit
 
+public enum SyncDirection {
+    case unidirectional
+    case upload
+    case download
+}
+
 /// SyncObject is for each model you want to sync.
 /// Logically,
 /// 1. it takes care of the operations of CKRecordZone.
@@ -29,6 +35,59 @@ public final class SyncObject<T> where T: Object & CKRecordConvertible {
     public init(realmConfiguration: Realm.Configuration = Realm.Configuration.defaultConfiguration, syncReferences: Bool = false) {
         self.realmConfiguration = realmConfiguration
         self.syncReferences = syncReferences
+        
+        // Create dependency graph
+        
+        let node = SyncObjectNode(object: T.self, realm: try! Realm(configuration: realmConfiguration))
+        
+        node.printDependencies()
+    }
+}
+
+// Used internally to construct a graph of dependencies for recursive fetch.
+struct SyncObjectNode {
+    var className : String
+    var property : String?
+    
+    let dependencies : [SyncObjectNode]
+    
+    init(object: Object.Type, realm: Realm) {
+        self.init(className: object.className(), realm: realm)
+    }
+    
+    init (className : String, realm: Realm) {
+        self.className = className
+        
+        // Go through properties and find references.
+        
+        guard let schema = realm.schema.objectSchema.first(where: { $0.className == className }) else {
+            dependencies = []
+            return
+        }
+        
+        var finalDependencies : [SyncObjectNode] = []
+        
+        for property in schema.properties {
+            if let propertyObjectName = property.objectClassName, property.type == .object, propertyObjectName != CreamAsset.className() {
+                finalDependencies.append(SyncObjectNode(className: propertyObjectName, realm: realm))
+            }
+        }
+        
+        dependencies = finalDependencies
+    }
+    
+    func printDependencies(offset: Int = 0) {
+        var offsetString = ""
+        
+        for _ in 0..<offset {
+            offsetString += " "
+        }
+        
+        log_info("%@ -> [%@]: Dependency count: %d", offsetString, className)
+        
+        for dependency in dependencies {
+            dependency.printDependencies(offset: offset + 2)
+        }
     }
 }
 
