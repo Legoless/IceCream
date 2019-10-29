@@ -211,6 +211,10 @@ extension CKRecordConvertible where Self: Object {
     static func parseFromRecord(record: CKRecord, realm: Realm) -> Self? {
         let o = Self()
         let ignoredProperties = Self.ignoredCloudProperties()
+        
+        // Fetch original record, for comparison
+        let originalRecord = realm.dynamicObject(ofType: Self.className(), forPrimaryKey: primaryKeyForRecordID(recordID: record.recordID, schema: o.objectSchema))
+        
         for prop in o.objectSchema.properties {
             if ignoredProperties.contains(prop.name) {
                 continue
@@ -259,14 +263,14 @@ extension CKRecordConvertible where Self: Object {
                     guard let references = record.value(forKey: prop.name) as? [CKRecord.Reference] else {
                         break
                     }
+                    guard let ownerType = prop.objectClassName else { break }
                     
                     let list = List<DynamicObject>()
                     
-                    for owner in references {
-                        guard let ownerType = prop.objectClassName else { break }
+                    for reference in references {
                         let schema = realm.schema.objectSchema.first(where: { $0.className == ownerType })
                         
-                        primaryKeyForRecordID(recordID: owner.recordID, schema: schema).flatMap {
+                        primaryKeyForRecordID(recordID: reference.recordID, schema: schema).flatMap {
                             guard let dynamicObject = realm.dynamicObject(ofType: ownerType, forPrimaryKey: $0) else {
                                 return
                             }
