@@ -47,6 +47,47 @@ extension CKRecordConvertible where Self: Object {
         }
     }
     
+    public var referenceRecords : [CKRecord] {
+        var references : [CKRecord] = []
+        
+        let properties = objectSchema.properties
+        let ignoredProperties = Self.ignoredCloudProperties()
+        
+        for prop in properties {
+            
+            if ignoredProperties.contains(prop.name) {
+                continue
+            }
+            
+            let item = self[prop.name]
+            
+            if prop.isArray {
+                switch prop.type {
+                case .object:
+                    guard let list = item as? List<Object>, !list.isEmpty else { break }
+                    let array = Array(list)
+                default:
+                    break
+                    /// Other inner types of List is not supported yet
+                }
+                continue
+            }
+            
+            switch prop.type {
+            case .object:
+                guard let objectName = prop.objectClassName else { break }
+                // If object is CreamAsset, set record with its wrapped CKAsset value
+                if let owner = item as? CKRecordConvertible {
+                }
+                // To-many relationship is not supported yet.
+            default:
+                break
+            }
+            
+        }
+        return references
+    }
+    
     /// recordName : this is the unique identifier for the record, used to locate records on the database. We can create our own ID or leave it to CloudKit to generate a random UUID.
     /// For more: https://medium.com/@guilhermerambo/synchronizing-data-with-cloudkit-94c6246a3fda
     public var recordID: CKRecord.ID {
@@ -121,9 +162,21 @@ extension CKRecordConvertible where Self: Object {
                     guard let list = item as? List<Date>, !list.isEmpty else { break }
                     let array = Array(list)
                     r[prop.name] = array as CKRecordValue
+                case .object:
+                    guard let objectName = prop.objectClassName else { break }
+                    
+                    if objectName == CreamAsset.className(), let creamAssets = item as? List<CreamAsset>, !creamAssets.isEmpty {
+                        r[prop.name] = creamAssets.map { $0.asset } as CKRecordValue
+                    }
+                    else if let list = item as? List<Object>, !list.isEmpty {
+                        let array = Array(list)
+                        guard let objectList = array as? [CKRecordConvertible] else { break }
+                        
+                        r[prop.name] = objectList.map { CKRecord.Reference(recordID: $0.recordID, action: .none) } as CKRecordValue
+                    }
+                    
                 default:
                     break
-                    /// Other inner types of List is not supported yet
                 }
                 continue
             }
@@ -133,7 +186,7 @@ extension CKRecordConvertible where Self: Object {
                 r[prop.name] = item as? CKRecordValue
             case .object:
                 guard let objectName = prop.objectClassName else { break }
-                // If object is CreamAsset, set record with its wrapped CKAsset value
+                
                 if objectName == CreamAsset.className(), let creamAsset = item as? CreamAsset {
                     r[prop.name] = creamAsset.asset
                 } else if let owner = item as? CKRecordConvertible {
@@ -145,7 +198,6 @@ extension CKRecordConvertible where Self: Object {
                     /// When we set nil to the property of a CKRecord, that record's property will be hidden in the CloudKit Dashboard
                     r[prop.name] = nil
                 }
-                // To-many relationship is not supported yet.
             default:
                 break
             }

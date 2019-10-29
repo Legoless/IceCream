@@ -24,9 +24,11 @@ public final class SyncObject<T> where T: Object & CKRecordConvertible {
     public var pipeToEngine: ((_ recordsToStore: [CKRecord], _ recordIDsToDelete: [CKRecord.ID]) -> ())?
     
     public let realmConfiguration: Realm.Configuration
+    public let syncReferences: Bool
     
-    public init(realmConfiguration: Realm.Configuration = Realm.Configuration.defaultConfiguration) {
+    public init(realmConfiguration: Realm.Configuration = Realm.Configuration.defaultConfiguration, syncReferences: Bool = false) {
         self.realmConfiguration = realmConfiguration
+        self.syncReferences = syncReferences
     }
 }
 
@@ -150,7 +152,17 @@ extension SyncObject: Syncable {
     
     public func pushLocalObjectsToCloudKit() {
         let realm = try! Realm(configuration: self.realmConfiguration)
-        let recordsToStore: [CKRecord] = realm.objects(T.self).filter { !$0.isDeleted }.map { $0.record }
+        var recordsToStore: [CKRecord] = []
+        
+        realm.objects(T.self).filter { !$0.isDeleted }.forEach { item in
+            // If references should be synced, pipe records to them.
+            if self.syncReferences {
+                recordsToStore.append(contentsOf: item.referenceRecords)
+            }
+            
+            recordsToStore.append(item.record)
+        }
+        
         pipeToEngine?(recordsToStore, [])
     }
     
