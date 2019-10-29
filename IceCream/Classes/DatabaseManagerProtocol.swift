@@ -81,7 +81,9 @@ extension DatabaseManager {
     /// Sync local data to CloudKit
     /// For more about the savePolicy: https://developer.apple.com/documentation/cloudkit/ckrecordsavepolicy
     public func syncRecordsToCloudKit(recordsToStore: [CKRecord], recordIDsToDelete: [CKRecord.ID], completion: ((Error?) -> ())? = nil) {
-        let modifyOpe = CKModifyRecordsOperation(recordsToSave: recordsToStore, recordIDsToDelete: recordIDsToDelete)
+        let filteredRecords = filterOrderedRecords(records: recordsToStore)
+        
+        let modifyOpe = CKModifyRecordsOperation(recordsToSave: filteredRecords, recordIDsToDelete: recordIDsToDelete)
         
         if #available(iOS 11.0, OSX 10.13, tvOS 11.0, watchOS 4.0, *) {
             let config = CKOperation.Configuration()
@@ -114,12 +116,12 @@ extension DatabaseManager {
                 }
             case .retry(let timeToWait, _):
                 ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait) {
-                    self.syncRecordsToCloudKit(recordsToStore: recordsToStore, recordIDsToDelete: recordIDsToDelete, completion: completion)
+                    self.syncRecordsToCloudKit(recordsToStore: filteredRecords, recordIDsToDelete: recordIDsToDelete, completion: completion)
                 }
             case .chunk:
                 /// CloudKit says maximum number of items in a single request is 400.
                 /// So I think 300 should be fine by them.
-                let chunkedRecords = recordsToStore.chunkItUp(by: 300)
+                let chunkedRecords = filteredRecords.chunkItUp(by: 300)
                 for chunk in chunkedRecords {
                     self.syncRecordsToCloudKit(recordsToStore: chunk, recordIDsToDelete: recordIDsToDelete, completion: completion)
                 }
@@ -131,4 +133,21 @@ extension DatabaseManager {
         database.add(modifyOpe)
     }
     
+    
+    private func filterOrderedRecords(records: [CKRecord]) -> [CKRecord] {
+        var recordSet = Set<String>()
+        
+        var finalRecords : [CKRecord] = []
+        
+        for record in records {
+            if recordSet.contains(record.recordID.recordName) {
+                continue
+            }
+            
+            recordSet.insert(record.recordID.recordName)
+            finalRecords.append(record)
+        }
+        
+        return finalRecords
+    }
 }
