@@ -141,13 +141,12 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
     }
     
     private func fetchChangesInZones(_ callback: ((Error?) -> Void)? = nil) {
-        let changesOp = CKFetchRecordZoneChangesOperation(recordZoneIDs: zoneIds, optionsByRecordZoneID: zoneIdOptions)
+        let changesOp = CKFetchRecordZoneChangesOperation(recordZoneIDs: [ zoneId ], optionsByRecordZoneID: [ zoneId : zoneIdOptions ])
         changesOp.fetchAllChanges = true
         
         changesOp.recordZoneChangeTokensUpdatedBlock = { [weak self] zoneId, token, _ in
             guard let self = self else { return }
-            guard let syncObject = self.syncObjects.first(where: { $0.zoneID == zoneId }) else { return }
-            syncObject.zoneChangesToken = token
+            self.zoneChangesToken = token
         }
         
         changesOp.recordChangedBlock = { [weak self] record in
@@ -158,9 +157,9 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
             syncObject.add(record: record)
         }
         
-        changesOp.recordWithIDWasDeletedBlock = { [weak self] recordId, _ in
+        changesOp.recordWithIDWasDeletedBlock = { [weak self] recordId, recordType in
             guard let self = self else { return }
-            guard let syncObject = self.syncObjects.first(where: { $0.zoneID == recordId.zoneID }) else { return }
+            guard let syncObject = self.syncObjects.first(where: { $0.recordType == recordType }) else { return }
             syncObject.delete(recordID: recordId)
         }
         
@@ -168,8 +167,7 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
             guard let self = self else { return }
             switch ErrorHandler.shared.resultType(with: error) {
             case .success:
-                guard let syncObject = self.syncObjects.first(where: { $0.zoneID == zoneId }) else { return }
-                syncObject.zoneChangesToken = token
+                self.zoneChangesToken = token
             case .retry(let timeToWait, _):
                 ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait, block: {
                     self.fetchChangesInZones(callback)
@@ -178,8 +176,7 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
                 switch reason {
                 case .changeTokenExpired:
                     /// The previousServerChangeToken value is too old and the client must re-sync from scratch
-                    guard let syncObject = self.syncObjects.first(where: { $0.zoneID == zoneId }) else { return }
-                    syncObject.zoneChangesToken = nil
+                    self.zoneChangesToken = nil
                     self.fetchChangesInZones(callback)
                 default:
                     return
@@ -216,6 +213,23 @@ extension PrivateZoneDatabaseManager {
         }
     }
     
+    var zoneChangesToken: CKServerChangeToken? {
+        get {
+            /// For the very first time when launching, the token will be nil and the server will be giving everything on the Cloud to client
+            /// In other situation just get the unarchive the data object
+            guard let tokenData = UserDefaults.standard.object(forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value) as? Data else { return nil }
+            return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
+        }
+        set {
+            guard let n = newValue else {
+                UserDefaults.standard.removeObject(forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value)
+                return
+            }
+            let data = NSKeyedArchiver.archivedData(withRootObject: n)
+            UserDefaults.standard.set(data, forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value)
+        }
+    }
+    
     var subscriptionIsLocallyCached: Bool {
         get {
             guard let flag = UserDefaults.standard.object(forKey: IceCreamKey.subscriptionIsLocallyCachedKey.value) as? Bool  else { return false }
@@ -226,18 +240,16 @@ extension PrivateZoneDatabaseManager {
         }
     }
     
-    private var zoneIds: [CKRecordZone.ID] {
-        return syncObjects.map { $0.zoneID }
+    private var zoneId: CKRecordZone.ID {
+        return settings.zoneId
     }
     
-    private var zoneIdOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] {
-        return syncObjects.reduce([CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions]()) { (dict, syncObject) -> [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] in
-            var dict = dict
-            let zoneChangesOptions = CKFetchRecordZoneChangesOperation.ZoneOptions()
-            zoneChangesOptions.previousServerChangeToken = syncObject.zoneChangesToken
-            dict[syncObject.zoneID] = zoneChangesOptions
-            return dict
-        }
+    private var zoneIdOptions: CKFetchRecordZoneChangesOperation.ZoneOptions {
+        
+        let zoneChangesOptions = CKFetchRecordZoneChangesOperation.ZoneOptions()
+        zoneChangesOptions.previousServerChangeToken = zoneChangesToken
+        
+        return zoneChangesOptions
     }
     
     @objc func cleanUp() {
