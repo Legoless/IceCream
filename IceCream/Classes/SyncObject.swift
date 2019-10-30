@@ -21,7 +21,7 @@ public final class SyncObject<T> where T: Object & CKRecordConvertible & CKRecor
     /// For more, reference is here: https://realm.io/docs/swift/latest/#notifications
     private var notificationToken: NotificationToken?
     
-    public var pipeToEngine: ((_ recordsToStore: [CKRecord], _ recordIDsToDelete: [CKRecord.ID]) -> ())?
+    public var pipeToEngine: ((_ objectsToStore: [Object], _ recordIDsToDelete: [CKRecord.ID]) -> ())?
     
     public let realmConfiguration: Realm.Configuration
     
@@ -36,37 +36,6 @@ extension SyncObject: Syncable {
     
     public var recordType: String {
         return T.recordType
-    }
-    
-    public var zoneID: CKRecordZone.ID {
-        return T.zoneID
-    }
-    
-    public var zoneChangesToken: CKServerChangeToken? {
-        get {
-            /// For the very first time when launching, the token will be nil and the server will be giving everything on the Cloud to client
-            /// In other situation just get the unarchive the data object
-            guard let tokenData = UserDefaults.standard.object(forKey: T.className() + IceCreamKey.zoneChangesTokenKey.value) as? Data else { return nil }
-            return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
-        }
-        set {
-            guard let n = newValue else {
-                UserDefaults.standard.removeObject(forKey: T.className() + IceCreamKey.zoneChangesTokenKey.value)
-                return
-            }
-            let data = NSKeyedArchiver.archivedData(withRootObject: n)
-            UserDefaults.standard.set(data, forKey: T.className() + IceCreamKey.zoneChangesTokenKey.value)
-        }
-    }
-
-    public var isCustomZoneCreated: Bool {
-        get {
-            guard let flag = UserDefaults.standard.object(forKey: T.className() + IceCreamKey.hasCustomZoneCreatedKey.value) as? Bool else { return false }
-            return flag
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: T.className() + IceCreamKey.hasCustomZoneCreatedKey.value)
-        }
     }
     
     public func add(record: CKRecord) {

@@ -194,7 +194,6 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
 }
 
 extension PrivateZoneDatabaseManager {
-    /// The changes token, for more please reference to https://developer.apple.com/videos/play/wwdc2016/231/
     var databaseChangeToken: CKServerChangeToken? {
         get {
             /// For the very first time when launching, the token will be nil and the server will be giving everything on the Cloud to client
