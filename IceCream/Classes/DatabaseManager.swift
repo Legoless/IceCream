@@ -17,12 +17,16 @@ public struct SyncSettings {
         case upstream
     }
     
-    var databaseScope : CKDatabase.Scope = .private
-    var container : CKContainer = .default()
+    public var databaseScope : CKDatabase.Scope = .private
+    public var container : CKContainer = .default()
     
-    var direction : Direction = .bidirectional
+    public var direction : Direction = .bidirectional
     
-    var zoneId : CKRecordZone.ID = CKRecordZone.ID.default
+    public var zoneId : CKRecordZone.ID = CKRecordZone.ID.default
+    
+    public init() {
+        
+    }
 }
 
 public protocol DatabaseManager: class {
