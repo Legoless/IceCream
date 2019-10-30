@@ -26,7 +26,7 @@ public final class SyncEngine {
         self.init(objects: objects, settings: settings)
     }
     
-    private init(objects: [Syncable], settings : SyncSettings) {
+    public init(objects: [Syncable], settings : SyncSettings) {
         self.settings = settings
         switch settings.databaseScope {
         case .private:
