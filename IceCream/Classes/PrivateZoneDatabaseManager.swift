@@ -45,7 +45,7 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
             case .success:
                 self.databaseChangeToken = newToken
                 // Fetch the changes in zone level
-                self.fetchChangesInZones(callback)
+                self.fetchChangesInZone(callback)
             case .retry(let timeToWait, _):
                 ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait, block: {
                     self.fetchChangesInDatabase(callback)
@@ -80,7 +80,6 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
                     zone.isCreated = true
                 }
                 self.syncObjects.forEach { object in
-                    
                     
                     // As we register local database in the first step, we have to force push local objects which
                     // have not been caught to CloudKit to make data in sync
@@ -140,7 +139,7 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
         }
     }
     
-    private func fetchChangesInZones(_ callback: ((Error?) -> Void)? = nil) {
+    private func fetchChangesInZone(_ callback: ((Error?) -> Void)? = nil) {
         let changesOp = CKFetchRecordZoneChangesOperation(recordZoneIDs: [ zoneId ], optionsByRecordZoneID: [ zoneId : zoneIdOptions ])
         changesOp.fetchAllChanges = true
         
@@ -170,14 +169,14 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
                 self.zoneChangesToken = token
             case .retry(let timeToWait, _):
                 ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait, block: {
-                    self.fetchChangesInZones(callback)
+                    self.fetchChangesInZone(callback)
                 })
             case .recoverableError(let reason, _):
                 switch reason {
                 case .changeTokenExpired:
                     /// The previousServerChangeToken value is too old and the client must re-sync from scratch
                     self.zoneChangesToken = nil
-                    self.fetchChangesInZones(callback)
+                    self.fetchChangesInZone(callback)
                 default:
                     return
                 }
