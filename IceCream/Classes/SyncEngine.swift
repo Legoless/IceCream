@@ -13,6 +13,22 @@ import CloudKit
 /// 2. it handles all of the CloudKit config stuffs, such as subscriptions
 /// 3. it hands over CKRecordZone stuffs to SyncObject so that it can have an effect on local Realm Database
 
+public struct SyncSettings {
+    public enum Direction {
+        // SyncEngine will do a complete synchronization. Data on CloudKit will be the same as local
+        case bidirectional
+        // SyncEngine will only download records and fetch remote changes.
+        case downstream
+        // SyncEngine will only upload records and local changes.
+        case upstream
+    }
+    
+    var databaseScope : CKDatabase.Scope = .private
+    var container : CKContainer = .default()
+    
+    var direction : Direction = .bidirectional
+}
+
 public final class SyncEngine {
     
     private let databaseManager: DatabaseManager
