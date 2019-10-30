@@ -19,11 +19,13 @@ final class PublicDatabaseManager: DatabaseManager {
     let database: CKDatabase
     
     let syncObjects: [Syncable]
+    let settings: SyncSettings
     
-    init(objects: [Syncable], container: CKContainer) {
+    public init(objects: [Syncable], settings: SyncSettings) {
         self.syncObjects = objects
-        self.container = container
-        self.database = container.publicCloudDatabase
+        self.settings = settings
+        self.container = settings.container
+        self.database = settings.container.privateCloudDatabase
     }
     
     func fetchChangesInDatabase(_ callback: ((Error?) -> Void)?) {
