@@ -66,9 +66,9 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
         
         database.add(changesOperation)
     }
-    
+
     func createCustomZonesIfAllowed() {
-        let zonesToCreate = syncObjects.filter { !$0.isCustomZoneCreated }.map { CKRecordZone(zoneID: $0.zoneID) }
+        let zonesToCreate = [ CKRecordZone(zoneID: settings.zoneId) ].filter { !$0.isCreated }
         guard zonesToCreate.count > 0 else { return }
         
         let modifyOp = CKModifyRecordZonesOperation(recordZonesToSave: zonesToCreate, recordZoneIDsToDelete: nil)
@@ -76,8 +76,11 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
             guard let self = self else { return }
             switch ErrorHandler.shared.resultType(with: error) {
             case .success:
+                zonesToCreate.forEach { zone in
+                    zone.isCreated = true
+                }
                 self.syncObjects.forEach { object in
-                    object.isCustomZoneCreated = true
+                    
                     
                     // As we register local database in the first step, we have to force push local objects which
                     // have not been caught to CloudKit to make data in sync
@@ -240,6 +243,22 @@ extension PrivateZoneDatabaseManager {
     @objc func cleanUp() {
         for syncObject in syncObjects {
             syncObject.cleanUp()
+        }
+    }
+}
+
+extension CKRecordZone {
+    public var isCreated: Bool {
+        get {
+            if self.zoneID == CKRecordZone.ID.default {
+                return true
+            }
+            
+            guard let flag = UserDefaults.standard.object(forKey: zoneID.zoneName + IceCreamKey.hasCustomZoneCreatedKey.value) as? Bool else { return false }
+            return flag
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: zoneID.zoneName + IceCreamKey.hasCustomZoneCreatedKey.value)
         }
     }
 }

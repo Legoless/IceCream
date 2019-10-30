@@ -21,6 +21,8 @@ public struct SyncSettings {
     var container : CKContainer = .default()
     
     var direction : Direction = .bidirectional
+    
+    var zoneId : CKRecordZone.ID = CKRecordZone.ID.default
 }
 
 public protocol DatabaseManager: class {
