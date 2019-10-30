@@ -119,7 +119,7 @@ extension SyncObject: Syncable {
     
     public func pushLocalObjectsToCloudKit() {
         let realm = try! Realm(configuration: self.realmConfiguration)
-        let objectsToStore = Array(realm.objects(T.self).filter { !$0.isDeleted })
+        let objectsToStore = Array(realm.objects(T.self).filter("isDeleted = false"))
         pipeToEngine?(objectsToStore, [])
     }
     
