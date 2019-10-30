@@ -86,9 +86,15 @@ extension SyncEngine {
         databaseManager.syncObjects.forEach { $0.pushLocalObjectsToCloudKit() }
     }
     
-    public func initialSync () {
-        self.pull { _ in
+    public func initialSync (completionHandler: ((Error?) -> Void)? = nil) {
+        self.pull { error in
+            if let error = error {
+                completionHandler?(error)
+                return
+            }
+            
             self.pushAll()
+            completionHandler?(nil)
         }
     }
 }
