@@ -31,7 +31,7 @@ final class PublicDatabaseManager: DatabaseManager {
             let predicate = NSPredicate(value: true)
             let query = CKQuery(recordType: syncObject.recordType, predicate: predicate)
             let queryOperation = CKQueryOperation(query: query)
-            self?.excuteQueryOperation(queryOperation: queryOperation, on: syncObject, callback: callback)
+            self?.executeQueryOperation(queryOperation: queryOperation, on: syncObject, callback: callback)
         }
     }
     
@@ -64,7 +64,7 @@ final class PublicDatabaseManager: DatabaseManager {
     }
     
     // MARK: - Private Methods
-    private func excuteQueryOperation(queryOperation: CKQueryOperation,on syncObject: Syncable, callback: ((Error?) -> Void)? = nil) {
+    private func executeQueryOperation(queryOperation: CKQueryOperation,on syncObject: Syncable, callback: ((Error?) -> Void)? = nil) {
         queryOperation.recordFetchedBlock = { record in
             syncObject.add(record: record)
         }
@@ -73,7 +73,7 @@ final class PublicDatabaseManager: DatabaseManager {
             guard let self = self else { return }
             if let cursor = cursor {
                 let subsequentQueryOperation = CKQueryOperation(cursor: cursor)
-                self.excuteQueryOperation(queryOperation: subsequentQueryOperation, on: syncObject, callback: callback)
+                self.executeQueryOperation(queryOperation: subsequentQueryOperation, on: syncObject, callback: callback)
                 return
             }
             switch ErrorHandler.shared.resultType(with: error) {
@@ -83,7 +83,7 @@ final class PublicDatabaseManager: DatabaseManager {
                 }
             case .retry(let timeToWait, _):
                 ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait, block: {
-                    self.excuteQueryOperation(queryOperation: queryOperation, on: syncObject, callback: callback)
+                    self.executeQueryOperation(queryOperation: queryOperation, on: syncObject, callback: callback)
                 })
             default:
                 break
