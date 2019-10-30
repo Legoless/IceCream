@@ -21,7 +21,7 @@ public final class SyncObject<T> where T: Object & CKRecordConvertible & CKRecor
     /// For more, reference is here: https://realm.io/docs/swift/latest/#notifications
     private var notificationToken: NotificationToken?
     
-    public var pipeToEngine: ((_ objectsToStore: [Object], _ recordIDsToDelete: [CKRecord.ID]) -> ())?
+    public var pipeToEngine: ((_ objectsToStore: [CKRecordConvertible], _ objectsToDelete: [CKRecordConvertible]) -> ())?
     
     public let realmConfiguration: Realm.Configuration
     
@@ -87,8 +87,8 @@ extension SyncObject: Syncable {
                 case .initial(_):
                     break
                 case .update(let collection, _, let insertions, let modifications):
-                    let recordsToStore = (insertions + modifications).filter { $0 < collection.count }.map { collection[$0] }.filter{ !$0.isDeleted }.map { $0.record }
-                    let recordIDsToDelete = modifications.filter { $0 < collection.count }.map { collection[$0] }.filter { $0.isDeleted }.map { $0.recordID }
+                    let recordsToStore = (insertions + modifications).filter { $0 < collection.count }.map { collection[$0] }.filter{ !$0.isDeleted }
+                    let recordIDsToDelete = modifications.filter { $0 < collection.count }.map { collection[$0] }.filter { $0.isDeleted }
                     
                     guard recordsToStore.count > 0 || recordIDsToDelete.count > 0 else { return }
                     self.pipeToEngine?(recordsToStore, recordIDsToDelete)
@@ -119,8 +119,8 @@ extension SyncObject: Syncable {
     
     public func pushLocalObjectsToCloudKit() {
         let realm = try! Realm(configuration: self.realmConfiguration)
-        let recordsToStore: [CKRecord] = realm.objects(T.self).filter { !$0.isDeleted }.map { $0.record }
-        pipeToEngine?(recordsToStore, [])
+        let objectsToStore = Array(realm.objects(T.self).filter { !$0.isDeleted })
+        pipeToEngine?(objectsToStore, [])
     }
     
 }

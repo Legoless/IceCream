@@ -26,7 +26,7 @@ extension CKRecordConvertible where Self: Object {
     
     /// recordName : this is the unique identifier for the record, used to locate records on the database. We can create our own ID or leave it to CloudKit to generate a random UUID.
     /// For more: https://medium.com/@guilhermerambo/synchronizing-data-with-cloudkit-94c6246a3fda
-    func recordID (in zoneID: CKRecordZone.ID) -> CKRecord.ID {
+    public func recordID (in zoneID: CKRecordZone.ID) -> CKRecord.ID {
         guard let sharedSchema = Self.sharedSchema() else {
             fatalError("No schema settled. Go to Realm Community to seek more help.")
         }
@@ -55,7 +55,7 @@ extension CKRecordConvertible where Self: Object {
     }
     
     // Simultaneously init CKRecord with zoneID and recordID, thanks to this guy: https://stackoverflow.com/questions/45429133/how-to-initialize-ckrecord-with-both-zoneid-and-recordid
-    func record (in zoneID: CKRecordZone.ID) -> CKRecord {
+    public func record (in zoneID: CKRecordZone.ID) -> CKRecord {
         let r = CKRecord(recordType: Self.recordType, recordID: recordID(in: zoneID))
         let properties = objectSchema.properties
         for prop in properties {

@@ -191,6 +191,16 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
         
         database.add(changesOp)
     }
+    
+    func prepare() {
+        syncObjects.forEach {
+            $0.pipeToEngine = { [weak self] objectsToStore, objectsToDelete in
+                guard let self = self else { return }
+                
+                self.syncRecordsToCloudKit(recordsToStore: objectsToStore.map { $0.record(in: self.settings.zoneId)}, recordIDsToDelete: objectsToDelete.map { $0.recordID(in: self.settings.zoneId) })
+            }
+        }
+    }
 }
 
 extension PrivateZoneDatabaseManager {

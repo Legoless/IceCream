@@ -74,19 +74,19 @@ public class CreamAsset: Object {
     /// - Returns: A CreamAsset if it was successful
     static func parse(from propName: String, record: CKRecord, asset: CKAsset) -> CreamAsset? {
         guard let url = asset.fileURL else { return nil }
-        return CreamAsset(objectID: "\(record.recordID.zoneID.zoneName)-\(record.recordID.recordName)", propName: propName, url: url)
+        return CreamAsset(objectID: record.recordID.recordName, propName: propName, url: url)
     }
 
     /// Creates a new CreamAsset for the given object with Data
     ///
     /// - Parameters:
-    ///   - object: The object the asset will live on
+    ///   - recordID: The recordID of the object asset will live on
     ///   - propName: The unique property name to identify this asset. e.g.: Dog Object may have multiple CreamAsset properties, so we need unique `propName`s to identify these.
     ///   - data: The file data
     ///   - shouldOverwrite: Whether to try and save the file even if an existing file exists for the same object.
     /// - Returns: A CreamAsset if it was successful
-    public static func create(object: CKRecordConvertible, propName: String, data: Data, shouldOverwrite: Bool = true) -> CreamAsset? {
-        return CreamAsset(objectID: object.recordID.recordName,
+    public static func create(recordID: CKRecord.ID, propName: String, data: Data, shouldOverwrite: Bool = true) -> CreamAsset? {
+        return CreamAsset(objectID: recordID.recordName,
                           propName: propName,
                           data: data,
                           shouldOverwrite: shouldOverwrite)
@@ -110,13 +110,13 @@ public class CreamAsset: Object {
     /// Creates a new CreamAsset for the given object with a URL
     ///
     /// - Parameters:
-    ///   - object: The object the asset will live on
+    ///   - recordID: The recordID of the object asset will live on
     ///   - propName: The unique property name to identify this asset. e.g.: Dog Object may have multiple CreamAsset properties, so we need unique `propName`s to identify these.
     ///   - url: The URL of the file to store. Any path extension on the file (e.g. "mov") will be maintained
     /// - Returns: A CreamAsset if it was successful
-    public static func create(object: CKRecordConvertible, propName: String, url: URL) -> CreamAsset? {
+    public static func create(recordID: CKRecord.ID, propName: String, url: URL) -> CreamAsset? {
 
-        return CreamAsset(objectID: object.recordID.recordName,
+        return CreamAsset(objectID: recordID.recordName,
                           propName: propName,
                           url: url)
     }

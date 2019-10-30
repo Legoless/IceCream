@@ -33,7 +33,7 @@ public final class SyncEngine {
         self.settings = settings
         switch settings.databaseScope {
         case .private:
-            databaseManager = PrivateDatabaseManager(objects: objects, settings: settings)
+            databaseManager = PrivateZoneDatabaseManager(objects: objects, settings: settings)
         case .public:
             databaseManager = PublicDatabaseManager(objects: objects, settings: settings)
         default:

@@ -65,9 +65,12 @@ extension DatabaseManager {
     
     func prepare() {
         syncObjects.forEach {
-            $0.pipeToEngine = { [weak self] recordsToStore, recordIDsToDelete in
+            $0.pipeToEngine = { [weak self] objectsToStore, objectsToDelete in
                 guard let self = self else { return }
-                self.syncRecordsToCloudKit(recordsToStore: recordsToStore, recordIDsToDelete: recordIDsToDelete)
+                
+                // Default implementation just synces to Default Zone. Private Zone manager uses a
+                // custom one.
+                self.syncRecordsToCloudKit(recordsToStore: objectsToStore.map { $0.record(in: CKRecordZone.ID.default )}, recordIDsToDelete: objectsToDelete.map { $0.recordID(in: CKRecordZone.ID.default) })
             }
         }
     }
