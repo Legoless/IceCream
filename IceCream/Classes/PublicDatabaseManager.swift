@@ -29,6 +29,10 @@ final class PublicDatabaseManager: DatabaseManager {
     }
     
     func fetchChangesInDatabase(_ callback: ((Error?) -> Void)?) {
+        guard settings.direction != .upstream else {
+            return
+        }
+        
         syncObjects.forEach { [weak self] syncObject in
             let predicate = NSPredicate(value: true)
             let query = CKQuery(recordType: syncObject.recordType, predicate: predicate)
@@ -42,6 +46,9 @@ final class PublicDatabaseManager: DatabaseManager {
     }
     
     func createDatabaseSubscriptionIfHaveNot() {
+        guard settings.direction != .downstream else {
+            return
+        }
         syncObjects.forEach { createSubscriptionInPublicDatabase(on: $0) }
     }
     
@@ -58,6 +65,10 @@ final class PublicDatabaseManager: DatabaseManager {
     }
     
     func registerLocalDatabase() {
+        guard settings.direction != .downstream else {
+            return
+        }
+        
         syncObjects.forEach { object in
             DispatchQueue.main.async {
                 object.registerLocalDatabase()
