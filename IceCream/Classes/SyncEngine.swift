@@ -12,9 +12,6 @@ import CloudKit
 /// 1. it takes care of the operations of **CKDatabase**
 /// 2. it handles all of the CloudKit config stuffs, such as subscriptions
 /// 3. it hands over CKRecordZone stuffs to SyncObject so that it can have an effect on local Realm Database
-
-
-
 public final class SyncEngine {
     
     private let databaseManager: DatabaseManager
@@ -89,6 +86,11 @@ extension SyncEngine {
         databaseManager.syncObjects.forEach { $0.pushLocalObjectsToCloudKit() }
     }
     
+    public func initialSync () {
+        self.pull { _ in
+            self.pushAll()
+        }
+    }
 }
 
 public enum Notifications: String, NotificationName {
