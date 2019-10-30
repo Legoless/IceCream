@@ -30,6 +30,9 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
     }
     
     func fetchChangesInDatabase(_ callback: ((Error?) -> Void)?) {
+        guard settings.direction != .upstream else {
+            return
+        }
         let changesOperation = CKFetchDatabaseChangesOperation(previousServerChangeToken: databaseChangeToken)
         
         /// Only update the changeToken when fetch process completes
@@ -68,6 +71,9 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
     }
 
     func createCustomZonesIfAllowed() {
+        guard settings.direction != .downstream else {
+            return
+        }
         let zonesToCreate = [ CKRecordZone(zoneID: settings.zoneId) ].filter { !$0.isCreated }
         guard zonesToCreate.count > 0 else { return }
         
@@ -132,6 +138,9 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
     }
     
     func registerLocalDatabase() {
+        guard settings.direction != .downstream else {
+            return
+        }
         self.syncObjects.forEach { object in
             DispatchQueue.main.async {
                 object.registerLocalDatabase()
@@ -196,6 +205,11 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
         syncObjects.forEach {
             $0.pipeToEngine = { [weak self] objectsToStore, objectsToDelete in
                 guard let self = self else { return }
+                
+                // If only downstream, we will not sync anything to CloudKit
+                guard self.settings.direction != .downstream else {
+                    return
+                }
                 
                 self.syncRecordsToCloudKit(recordsToStore: objectsToStore.map { $0.record(in: self.settings.zoneId)}, recordIDsToDelete: objectsToDelete.map { $0.recordID(in: self.settings.zoneId) })
             }
