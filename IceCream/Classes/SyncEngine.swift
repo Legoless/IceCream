@@ -32,22 +32,28 @@ public struct SyncSettings {
 public final class SyncEngine {
     
     private let databaseManager: DatabaseManager
+    private let settings : SyncSettings
     
     public convenience init(objects: [Syncable], databaseScope: CKDatabase.Scope = .private, container: CKContainer = .default()) {
-        switch databaseScope {
+        
+        var settings = SyncSettings()
+        settings.databaseScope = databaseScope
+        settings.container = container
+        
+        self.init(objects: objects, settings: settings)
+    }
+    
+    private init(objects: [Syncable], settings : SyncSettings) {
+        self.settings = settings
+        switch settings.databaseScope {
         case .private:
-            let privateDatabaseManager = PrivateDatabaseManager(objects: objects, container: container)
-            self.init(databaseManager: privateDatabaseManager)
+            databaseManager = PrivateDatabaseManager(objects: objects, container: settings.container)
         case .public:
-            let publicDatabaseManager = PublicDatabaseManager(objects: objects, container: container)
-            self.init(databaseManager: publicDatabaseManager)
+            databaseManager = PublicDatabaseManager(objects: objects, container: settings.container)
         default:
             fatalError("Not supported yet")
         }
-    }
-    
-    private init(databaseManager: DatabaseManager) {
-        self.databaseManager = databaseManager
+        
         setup()
     }
     
