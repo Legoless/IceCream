@@ -25,7 +25,7 @@ final class PublicDatabaseManager: DatabaseManager {
         self.syncObjects = objects
         self.settings = settings
         self.container = settings.container
-        self.database = settings.container.privateCloudDatabase
+        self.database = settings.container.publicCloudDatabase
     }
     
     func fetchChangesInDatabase(_ callback: ((Error?) -> Void)?) {
