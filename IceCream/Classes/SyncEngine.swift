@@ -12,10 +12,13 @@ import CloudKit
 /// 1. it takes care of the operations of **CKDatabase**
 /// 2. it handles all of the CloudKit config stuffs, such as subscriptions
 /// 3. it hands over CKRecordZone stuffs to SyncObject so that it can have an effect on local Realm Database
+
 public final class SyncEngine {
     
     private let databaseManager: DatabaseManager
     private let settings : SyncSettings
+    
+    public private(set) var accountStatus : CKAccountStatus?
     
     public convenience init(objects: [Syncable], databaseScope: CKDatabase.Scope = .private, container: CKContainer = .default()) {
         
@@ -44,6 +47,7 @@ public final class SyncEngine {
         databaseManager.prepare()
         databaseManager.container.accountStatus { [weak self] (status, error) in
             guard let self = self else { return }
+            self.accountStatus = status
             switch status {
             case .available:
                 self.databaseManager.registerLocalDatabase()
