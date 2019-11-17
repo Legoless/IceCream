@@ -30,6 +30,7 @@ final class PublicDatabaseManager: DatabaseManager {
     
     func fetchChangesInDatabase(_ callback: ((Error?) -> Void)?) {
         guard settings.direction != .upstream else {
+            callback?(nil)
             return
         }
         
