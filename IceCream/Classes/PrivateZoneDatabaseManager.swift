@@ -31,43 +31,55 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
     
     func fetchChangesInDatabase(_ callback: ((Error?) -> Void)?) {
         guard settings.direction != .upstream else {
+            callback?(nil)
             return
         }
-        let changesOperation = CKFetchDatabaseChangesOperation(previousServerChangeToken: databaseChangeToken)
         
-        /// Only update the changeToken when fetch process completes
-        changesOperation.changeTokenUpdatedBlock = { [weak self] newToken in
-            self?.databaseChangeToken = newToken
+        if settings.zoneId == CKRecordZone.default().zoneID {
+            syncObjects.forEach { [weak self] syncObject in
+                let predicate = NSPredicate(value: true)
+                let query = CKQuery(recordType: syncObject.recordType, predicate: predicate)
+                let queryOperation = CKQueryOperation(query: query)
+                self?.executeQueryOperation(queryOperation: queryOperation, on: syncObject, callback: callback)
+            }
         }
-        
-        changesOperation.fetchDatabaseChangesCompletionBlock = {
-            [weak self]
-            newToken, _, error in
-            guard let self = self else { return }
-            switch ErrorHandler.shared.resultType(with: error) {
-            case .success:
-                self.databaseChangeToken = newToken
-                // Fetch the changes in zone level
-                self.fetchChangesInZone(callback)
-            case .retry(let timeToWait, _):
-                ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait, block: {
-                    self.fetchChangesInDatabase(callback)
-                })
-            case .recoverableError(let reason, _):
-                switch reason {
-                case .changeTokenExpired:
-                    /// The previousServerChangeToken value is too old and the client must re-sync from scratch
-                    self.databaseChangeToken = nil
-                    self.fetchChangesInDatabase(callback)
+        else {
+            let changesOperation = CKFetchDatabaseChangesOperation(previousServerChangeToken: databaseChangeToken)
+            
+            /// Only update the changeToken when fetch process completes
+            changesOperation.changeTokenUpdatedBlock = { [weak self] newToken in
+                self?.databaseChangeToken = newToken
+            }
+            
+            changesOperation.fetchDatabaseChangesCompletionBlock = {
+                [weak self]
+                newToken, _, error in
+                guard let self = self else { return }
+                switch ErrorHandler.shared.resultType(with: error) {
+                case .success:
+                    self.databaseChangeToken = newToken
+                    // Fetch the changes in zone level
+                    self.fetchChangesInZone(callback)
+                case .retry(let timeToWait, _):
+                    ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait, block: {
+                        self.fetchChangesInDatabase(callback)
+                    })
+                case .recoverableError(let reason, _):
+                    switch reason {
+                    case .changeTokenExpired:
+                        /// The previousServerChangeToken value is too old and the client must re-sync from scratch
+                        self.databaseChangeToken = nil
+                        self.fetchChangesInDatabase(callback)
+                    default:
+                        return
+                    }
                 default:
                     return
                 }
-            default:
-                return
             }
+            
+            database.add(changesOperation)
         }
-        
-        database.add(changesOperation)
     }
 
     func createCustomZonesIfAllowed() {

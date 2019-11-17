@@ -78,35 +78,6 @@ final class PublicDatabaseManager: DatabaseManager {
     }
     
     // MARK: - Private Methods
-    private func executeQueryOperation(queryOperation: CKQueryOperation,on syncObject: Syncable, callback: ((Error?) -> Void)? = nil) {
-        queryOperation.recordFetchedBlock = { record in
-            syncObject.add(record: record)
-        }
-        
-        queryOperation.queryCompletionBlock = { [weak self] cursor, error in
-            guard let self = self else { return }
-            if let cursor = cursor {
-                let subsequentQueryOperation = CKQueryOperation(cursor: cursor)
-                self.executeQueryOperation(queryOperation: subsequentQueryOperation, on: syncObject, callback: callback)
-                return
-            }
-            switch ErrorHandler.shared.resultType(with: error) {
-            case .success:
-                DispatchQueue.main.async {
-                    callback?(nil)
-                }
-            case .retry(let timeToWait, _):
-                ErrorHandler.shared.retryOperationIfPossible(retryAfter: timeToWait, block: {
-                    self.executeQueryOperation(queryOperation: queryOperation, on: syncObject, callback: callback)
-                })
-            default:
-                break
-            }
-        }
-        
-        database.add(queryOperation)
-    }
-    
     private func createSubscriptionInPublicDatabase(on syncObject: Syncable) {
         #if os(iOS) || os(tvOS) || os(macOS)
         let predict = NSPredicate(value: true)
