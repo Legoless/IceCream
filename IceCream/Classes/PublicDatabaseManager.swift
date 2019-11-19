@@ -34,11 +34,33 @@ final class PublicDatabaseManager: DatabaseManager {
             return
         }
         
+        // Call callback only once.
+        
+        let syncObjectsCounter = Atomic(syncObjects.count)
+        var errors : [Error] = []
+        
         syncObjects.forEach { [weak self] syncObject in
             let predicate = NSPredicate(value: true)
             let query = CKQuery(recordType: syncObject.recordType, predicate: predicate)
             let queryOperation = CKQueryOperation(query: query)
-            self?.executeQueryOperation(queryOperation: queryOperation, on: syncObject, callback: callback)
+            self?.executeQueryOperation(queryOperation: queryOperation, on: syncObject) { error in
+                if let error = error {
+                    errors.append(error)
+                }
+                
+                syncObjectsCounter.value -= 1
+                
+                if syncObjectsCounter.value <= 0 {
+                    if let finalError = errors.first {
+                        NotificationCenter.default.post(name: Notifications.cloudKitDataPullFailed.name, object: finalError)
+                    }
+                    else {
+                        NotificationCenter.default.post(name: Notifications.cloudKitDataPullCompleted.name, object: nil)
+                    }
+                    
+                    callback?(errors.first)
+                }
+            }
         }
     }
     
