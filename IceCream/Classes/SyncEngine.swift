@@ -69,6 +69,14 @@ public final class SyncEngine {
             @unknown default:
                 break
             }
+            
+            if self.settings.syncOnSetup {
+                self.databaseManager.fetchChangesInDatabase { error in
+                    if error == nil {
+                        self.databaseManager.pushAll()
+                    }
+                }
+            }
         }
     }
     
@@ -87,7 +95,7 @@ extension SyncEngine {
     /// Push all existing local data to CloudKit
     /// You should NOT to call this method too frequently
     public func pushAll() {
-        databaseManager.syncObjects.forEach { $0.pushLocalObjectsToCloudKit() }
+        databaseManager.pushAll()
     }
     
     public func initialSync (completionHandler: ((Error?) -> Void)? = nil) {
