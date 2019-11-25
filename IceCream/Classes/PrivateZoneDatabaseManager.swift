@@ -44,8 +44,6 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
                 self.fetchSequentialChangesInDatabase(for: self.syncObjects[index + 1], callback: callback)
             }
         }
-        
-        
     }
     
     
@@ -63,7 +61,16 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
             var errors : [Error] = []
             
             if settings.sequential {
-                fetchSequentialChangesInDatabase(for: syncObjects.first!, callback: callback)
+                fetchSequentialChangesInDatabase(for: syncObjects.first!) { error in
+                    if let error = error {
+                        NotificationCenter.default.post(name: Notifications.cloudKitDataPullFailed.name, object: error)
+                    }
+                    else {
+                        NotificationCenter.default.post(name: Notifications.cloudKitDataPullCompleted.name, object: nil)
+                    }
+                    
+                    callback?(error)
+                }
             }
             else {
                 syncObjects.forEach { [weak self] syncObject in
