@@ -23,7 +23,7 @@ public struct SyncSettings {
     public var direction : Direction = .bidirectional
     
     public var syncOnSetup: Bool = true
-    
+    public var sequential : Bool = true
     public var zoneId : CKRecordZone.ID = CKRecordZone.ID.default
     
     public init() {

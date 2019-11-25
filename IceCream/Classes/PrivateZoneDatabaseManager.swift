@@ -29,6 +29,26 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
         self.database = settings.container.privateCloudDatabase
     }
     
+    private func fetchSequentialChangesInDatabase(for syncObject : Syncable, callback: ((Error?) -> Void)?) {
+        let predicate = NSPredicate(value: true)
+        let query = CKQuery(recordType: syncObject.recordType, predicate: predicate)
+        let queryOperation = CKQueryOperation(query: query)
+        self.executeQueryOperation(queryOperation: queryOperation, on: syncObject) { error in
+            if let error = error {
+                callback?(error)
+            }
+            else if let index = self.syncObjects.firstIndex(where: { $0 === syncObject }), index == self.syncObjects.count - 1 {
+                callback?(nil)
+            }
+            else if let index = self.syncObjects.firstIndex(where: { $0 === syncObject }) {
+                self.fetchSequentialChangesInDatabase(for: self.syncObjects[index + 1], callback: callback)
+            }
+        }
+        
+        
+    }
+    
+    
     func fetchChangesInDatabase(_ callback: ((Error?) -> Void)?) {
         guard settings.direction != .upstream else {
             callback?(nil)
@@ -42,26 +62,31 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
             let syncObjectsCounter = Atomic(syncObjects.count)
             var errors : [Error] = []
             
-            syncObjects.forEach { [weak self] syncObject in
-                let predicate = NSPredicate(value: true)
-                let query = CKQuery(recordType: syncObject.recordType, predicate: predicate)
-                let queryOperation = CKQueryOperation(query: query)
-                self?.executeQueryOperation(queryOperation: queryOperation, on: syncObject) { error in
-                    if let error = error {
-                        errors.append(error)
-                    }
-                    
-                    syncObjectsCounter.value -= 1
-                    
-                    if syncObjectsCounter.value <= 0 {
-                        if let finalError = errors.first {
-                            NotificationCenter.default.post(name: Notifications.cloudKitDataPullFailed.name, object: finalError)
-                        }
-                        else {
-                            NotificationCenter.default.post(name: Notifications.cloudKitDataPullCompleted.name, object: nil)
+            if settings.sequential {
+                fetchSequentialChangesInDatabase(for: syncObjects.first!, callback: callback)
+            }
+            else {
+                syncObjects.forEach { [weak self] syncObject in
+                    let predicate = NSPredicate(value: true)
+                    let query = CKQuery(recordType: syncObject.recordType, predicate: predicate)
+                    let queryOperation = CKQueryOperation(query: query)
+                    self?.executeQueryOperation(queryOperation: queryOperation, on: syncObject) { error in
+                        if let error = error {
+                            errors.append(error)
                         }
                         
-                        callback?(errors.first)
+                        syncObjectsCounter.value -= 1
+                        
+                        if syncObjectsCounter.value <= 0 {
+                            if let finalError = errors.first {
+                                NotificationCenter.default.post(name: Notifications.cloudKitDataPullFailed.name, object: finalError)
+                            }
+                            else {
+                                NotificationCenter.default.post(name: Notifications.cloudKitDataPullCompleted.name, object: nil)
+                            }
+                            
+                            callback?(errors.first)
+                        }
                     }
                 }
             }
