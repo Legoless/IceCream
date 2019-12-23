@@ -17,9 +17,10 @@ import CloudKit
 /// "Data and String properties cannot hold data exceeding 16MB in size. To store larger amounts of data, either break it up into 16MB chunks or store it directly on the file system, storing paths to these files in the Realm. An exception will be thrown at runtime if your app attempts to store more than 16MB in a single property."
 /// We choose the latter, that's storing it directly on the file system, storing paths to these files in the Realm.
 /// So this is the deal.
-public class CreamAsset: Object {
+public class CreamAsset: Object, Codable {
     @objc dynamic var uniqueFileName = ""
     @objc dynamic var data: Data?
+    
     override public static func ignoredProperties() -> [String] {
         return ["data", "filePath"]
     }
