@@ -138,7 +138,7 @@ public enum IceCreamKey: String {
     /// Notifications
     case syncableKey
     
-    var value: String {
+    public var value: String {
         return "icecream.keys." + rawValue
     }
 }

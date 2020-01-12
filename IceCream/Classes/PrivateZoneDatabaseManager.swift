@@ -41,6 +41,8 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
                 callback?(nil)
             }
             else if let index = self.syncObjects.firstIndex(where: { $0 === syncObject }) {
+                NotificationCenter.default.post(name: Notifications.cloudKitDataPartialPullCompleted.name, object: self, userInfo: [IceCreamKey.syncableKey.value : syncObject])
+                
                 self.fetchSequentialChangesInDatabase(for: self.syncObjects[index + 1], callback: callback)
             }
         }
