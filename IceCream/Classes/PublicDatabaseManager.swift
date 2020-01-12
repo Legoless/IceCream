@@ -60,6 +60,9 @@ final class PublicDatabaseManager: DatabaseManager {
                     
                     callback?(errors.first)
                 }
+                else {
+                    NotificationCenter.default.post(name: Notifications.cloudKitDataPartialPullCompleted.name, object: self, userInfo: [IceCreamKey.syncableKey : syncObject])
+                }
             }
         }
     }

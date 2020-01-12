@@ -70,12 +70,19 @@ public final class SyncEngine {
                 break
             }
             
-            if self.settings.syncOnSetup {
+            if self.settings.pullOnSetup && self.settings.pushOnSetup {
                 self.databaseManager.fetchChangesInDatabase { error in
                     if error == nil {
                         self.databaseManager.pushAll()
                     }
                 }
+            }
+            else if self.settings.pullOnSetup {
+                self.databaseManager.fetchChangesInDatabase { _ in
+                }
+            }
+            else if self.settings.pushOnSetup {
+                self.databaseManager.pushAll()
             }
         }
     }
@@ -113,6 +120,8 @@ extension SyncEngine {
 
 public enum Notifications: String, NotificationName {
     case cloudKitDataDidChangeRemotely
+    // Object will have syncable in the userInfo under key: "syncable"
+    case cloudKitDataPartialPullCompleted
     case cloudKitDataPullCompleted
     case cloudKitDataPullFailed
 }
@@ -125,6 +134,9 @@ public enum IceCreamKey: String {
     /// Flags
     case subscriptionIsLocallyCachedKey
     case hasCustomZoneCreatedKey
+    
+    /// Notifications
+    case syncableKey
     
     var value: String {
         return "icecream.keys." + rawValue
