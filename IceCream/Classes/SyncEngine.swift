@@ -15,8 +15,8 @@ import CloudKit
 
 public final class SyncEngine {
     
-    private let databaseManager: DatabaseManager
-    private let settings : SyncSettings
+    let databaseManager: DatabaseManager
+    let settings : SyncSettings
     
     public private(set) var accountStatus : CKAccountStatus?
     
