@@ -84,6 +84,8 @@ public final class SyncEngine {
             else if self.settings.pushOnSetup {
                 self.databaseManager.pushAll()
             }
+            
+            NotificationCenter.default.post(name: Notifications.cloudKitAccountStatusReceived.name, object: self)
         }
     }
     
@@ -124,6 +126,7 @@ public enum Notifications: String, NotificationName {
     case cloudKitDataPartialPullCompleted
     case cloudKitDataPullCompleted
     case cloudKitDataPullFailed
+    case cloudKitAccountStatusReceived
 }
 
 public enum IceCreamKey: String {
