@@ -314,7 +314,7 @@ extension PrivateZoneDatabaseManager {
                 return
             }
             
-            let data = try? NSKeyedArchiver.archivedData(withRootObject: n, requiringSecureCoding: false)
+            let data = try? NSKeyedArchiver.archivedData(withRootObject: n, requiringSecureCoding: true)
             
             UserDefaults.standard.set(data, forKey: IceCreamKey.databaseChangesTokenKey.value)
         }
@@ -333,7 +333,7 @@ extension PrivateZoneDatabaseManager {
                 UserDefaults.standard.removeObject(forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value)
                 return
             }
-            let data = try? NSKeyedArchiver.archivedData(withRootObject: n, requiringSecureCoding: false)
+            let data = try? NSKeyedArchiver.archivedData(withRootObject: n, requiringSecureCoding: true)
             UserDefaults.standard.set(data, forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value)
         }
     }
