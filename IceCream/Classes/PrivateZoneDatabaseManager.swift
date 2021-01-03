@@ -221,7 +221,9 @@ final class PrivateZoneDatabaseManager: DatabaseManager {
     }
     
     private func fetchChangesInZone(_ callback: ((Error?) -> Void)? = nil) {
-        let changesOp = CKFetchRecordZoneChangesOperation(recordZoneIDs: [ zoneId ], optionsByRecordZoneID: [ zoneId : zoneIdOptions ])
+        //let changesOp = CKFetchRecordZoneChangesOperation(recordZoneIDs: [ zoneId ], optionsByRecordZoneID: [ zoneId : zoneIdOptions ])
+        
+        let changesOp = CKFetchRecordZoneChangesOperation(recordZoneIDs: [ zoneId ], configurationsByRecordZoneID: [ zoneId : zoneIdConfiguration ])
         changesOp.fetchAllChanges = true
         
         changesOp.recordZoneChangeTokensUpdatedBlock = { [weak self] zoneId, token, _ in
@@ -303,6 +305,7 @@ extension PrivateZoneDatabaseManager {
             /// For the very first time when launching, the token will be nil and the server will be giving everything on the Cloud to client
             /// In other situation just get the unarchive the data object
             guard let tokenData = UserDefaults.standard.object(forKey: IceCreamKey.databaseChangesTokenKey.value) as? Data else { return nil }
+            
             return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
         }
         set {
@@ -346,12 +349,12 @@ extension PrivateZoneDatabaseManager {
         return settings.zoneId
     }
     
-    private var zoneIdOptions: CKFetchRecordZoneChangesOperation.ZoneOptions {
+    private var zoneIdConfiguration: CKFetchRecordZoneChangesOperation.ZoneConfiguration {
         
-        let zoneChangesOptions = CKFetchRecordZoneChangesOperation.ZoneOptions()
-        zoneChangesOptions.previousServerChangeToken = zoneChangesToken
+        let configuration = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
+        configuration.previousServerChangeToken = zoneChangesToken
         
-        return zoneChangesOptions
+        return configuration
     }
     
     @objc func cleanUp() {
