@@ -306,14 +306,16 @@ extension PrivateZoneDatabaseManager {
             /// In other situation just get the unarchive the data object
             guard let tokenData = UserDefaults.standard.object(forKey: IceCreamKey.databaseChangesTokenKey.value) as? Data else { return nil }
             
-            return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
+            return try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: tokenData)
         }
         set {
             guard let n = newValue else {
                 UserDefaults.standard.removeObject(forKey: IceCreamKey.databaseChangesTokenKey.value)
                 return
             }
-            let data = NSKeyedArchiver.archivedData(withRootObject: n)
+            
+            let data = try? NSKeyedArchiver.archivedData(withRootObject: n, requiringSecureCoding: false)
+            
             UserDefaults.standard.set(data, forKey: IceCreamKey.databaseChangesTokenKey.value)
         }
     }
@@ -323,14 +325,15 @@ extension PrivateZoneDatabaseManager {
             /// For the very first time when launching, the token will be nil and the server will be giving everything on the Cloud to client
             /// In other situation just get the unarchive the data object
             guard let tokenData = UserDefaults.standard.object(forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value) as? Data else { return nil }
-            return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
+            
+            return try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: tokenData)
         }
         set {
             guard let n = newValue else {
                 UserDefaults.standard.removeObject(forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value)
                 return
             }
-            let data = NSKeyedArchiver.archivedData(withRootObject: n)
+            let data = try? NSKeyedArchiver.archivedData(withRootObject: n, requiringSecureCoding: false)
             UserDefaults.standard.set(data, forKey: settings.zoneId.zoneName + IceCreamKey.zoneChangesTokenKey.value)
         }
     }
